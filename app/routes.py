@@ -31,6 +31,19 @@ def handle_usererror(e):
 @book_api.route("/", methods=["GET"])
 @book_api.route("/<int:book_id>", methods=["GET"])
 def get_book(book_id=None):
+    """
+    This API retrives the bookd from database.
+    It can retrive single book or multiple books.
+
+    while retirveing multiple books:
+    QUERY PARAMS:
+    sort - column name
+    order - asc/desc
+    page_limit - integer
+    page - page number(integer)
+    search - search word
+    search_column - on which column you want to perform search
+    """
     args = request.args
 
     sort = args.get("sort", "id")
@@ -61,7 +74,7 @@ def get_book(book_id=None):
     try:
         if sort not in columns:
             raise UserError(
-                'invalid sort argumnet. Only allowed "id","author_id","pages","title","cover_image","releaseDate","isbn"'
+                "invalid sort argumnet. Only allowed 'id','author_id','pages','title','cover_image','releaseDate','isbn'"
             )
 
         if order:
