@@ -23,7 +23,7 @@ class PostBookSchema(Schema):
     author_id = fields.Integer(required=False, allow_none=True)
     title = fields.String(required=True)
     cover_image = fields.String(required=False, allow_none=True)
-    pages = fields.Integer(required=True, default=0)
+    pages = fields.Integer(required=True)
     releaseDate = fields.String(required=True)
     isbn = fields.String(required=False, allow_none=True)
 
