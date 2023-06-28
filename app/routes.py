@@ -31,7 +31,94 @@ def handle_usererror(e):
 @book_api.route("/", methods=["GET"])
 @book_api.route("/<int:book_id>", methods=["GET"])
 def get_book(book_id=None):
-    pass
+    args = request.args
+
+    sort = args.get("sort", "id")
+    order = args.get("order", "asc")
+    page_limit = args.get("page_limit", 10, type=int)
+    page = args.get("page", 1, type=int)
+    search = args.get("search")
+    search_column = args.get("search_column")
+    columns = (
+        "id",
+        "author_id",
+        "pages",
+        "title",
+        "cover_image",
+        "releaseDate",
+        "isbn",
+    )
+    int_columns = ("id", "author_id", "pages")
+    string_columns = ("title", "cover_image", "releaseDate", "isbn")
+
+    books = Book.query
+
+    print(order, type(order))
+
+    if book_id:
+        books = books.filter_by(id=book_id).first()
+
+    try:
+        if sort not in columns:
+            raise UserError(
+                'invalid sort argumnet. Only allowed "id","author_id","pages","title","cover_image","releaseDate","isbn"'
+            )
+
+        if order:
+            order = order.lower()
+            if order not in ("asc", "desc"):
+                raise UserError("invald oder argument.only allowed 'asc','desc'")
+
+        if search:
+            print(search_column, search_column in int_columns)
+            if isinstance(search, str) and search_column in int_columns:
+                try:
+                    search = int(search)
+                except:
+                    raise UserError("Cant search a string in int columns")
+
+            if search_column in int_columns:
+                books = books.filter(getattr(Book, search_column) == search)
+            elif search_column in string_columns:
+                books = books.filter(getattr(Book, search_column).ilike(f"%{search}%"))
+            else:
+                raise UserError("invalid search column")
+
+        books = books.order_by(getattr(getattr(Book, sort), order)())
+
+        books = books.paginate(page=page, per_page=page_limit)
+
+        book_list = books_schema.dump(books)
+
+        if not book_list:
+            raise UserError("no content found")
+
+        if books.has_next:
+            next_url = url_for("book_api.get_book", page=books.next_num)
+        else:
+            next_url = None
+
+        if books.has_prev:
+            previous_url = url_for("book_api.get_book", page=books.prev_num)
+        else:
+            previous_url = None
+
+        books_data = dict(
+            book_details=book_list,
+            total=books.total,
+            current_page=books.page,
+            page_limit=books.per_page,
+            next_page=next_url,
+            previous_page=previous_url,
+        )
+
+    except Exception as e:
+        return {"error": str(e)}, 500
+    return {
+        "success": True,
+        "Books": books_data,
+        "message": "Data retrived succesfuly",
+    }, 200
 
 
 @book_api.route("/", methods=["POST"])
@@ -123,7 +210,7 @@ def update_book(book_id=None):
         db.session.commit()
     except Exception as e:
         return {"error": str(e)}
-    return {"success": True, "message": "Updated successfully"}
+    return {"success": True, "message": "Updated successfully"}, 200
 
 
 @book_api.route("/", methods=["DELETE"])
@@ -157,4 +244,4 @@ def delete_book(book_id=None):
         db.session.commit()
     except Exception as e:
         return {"error": str(e)}
-    return {"succes": True, "message": f"Deleted {count} row(s) successfully"}
+    return {"succes": True, "message": f"Deleted {count} row(s) successfully"}, 200
