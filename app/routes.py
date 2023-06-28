@@ -1,11 +1,16 @@
+# installed imports
 from flask import Blueprint,url_for,request,current_app
-from app.models import Book,post_books_schema,book_schema,books_schema
-from app import db
 from sqlalchemy import insert
 
+# custom imports
+from app.models import Book,post_books_schema,book_schema,books_schema
+from app import db
 
+
+# blueprint
 book_api = Blueprint('book_api',__name__,url_prefix='/books')
 
+# user defined  exceptions
 class UserError(Exception):
     def __init__(self,message,code=400):
         self.message=message
@@ -25,13 +30,26 @@ def get_book(book_id=None):
 
 @book_api.route('/',methods=['POST'])
 def create_book():
+    '''
+    This API inserts the books into database.
+    It can insert single row and multiple rows as well.
+
+    payload : list of dictionaries
+
+    "author_id": integer,
+    "title": string,
+    "cover_image": string,
+    "pages": integer,
+    "releaseDate": (year)string,
+    "isbn": string
+    '''
     books=request.json
     books=books.get('data')
 
     if not books:
         raise UserError('data not found')
     
-    errors=post_books_schema.validate(books)
+    errors=post_books_schema.validate(books) # validating input data
     if errors:
         return{"validationerrors":errors},400
     try:

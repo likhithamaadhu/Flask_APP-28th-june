@@ -1,6 +1,11 @@
+# inbuilt imports
 from dataclasses import dataclass
-from app import db
+
+# installed imports
 from marshmallow import Schema,fields
+
+# custom imports
+from app import db
 
 @dataclass
 class Book(db.Model):
